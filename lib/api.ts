@@ -21,7 +21,7 @@ export async function api<T>(
   const data = await res.json();
 
   if (!res.ok) {
-    if (res.status === 401 && !url.includes('/auth/')) {
+    if (res.status === 401 && !path.includes('/auth/')) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('kasirku_token');
         window.location.href = '/login';
