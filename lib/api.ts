@@ -21,6 +21,12 @@ export async function api<T>(
   const data = await res.json();
 
   if (!res.ok) {
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kasirku_token');
+        window.location.href = '/login';
+      }
+    }
     throw new Error(data.error ?? 'Terjadi kesalahan');
   }
 

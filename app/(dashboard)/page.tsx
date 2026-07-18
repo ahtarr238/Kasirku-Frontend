@@ -68,7 +68,12 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    setUser(getUser());
+    const currentUser = getUser();
+    if (!currentUser) {
+      window.location.href = '/login';
+      return;
+    }
+    setUser(currentUser);
     fetchData();
   }, []);
 
