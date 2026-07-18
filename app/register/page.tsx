@@ -31,12 +31,19 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const res = await apiPost<RegisterResponse>('/api/auth/register', {
+      await apiPost('/api/auth/register', {
+        name,
         email,
         password,
-        name: name.trim() || undefined,
       });
-      setToken(res.token);
+      
+      // Auto login after register
+      const loginRes = await apiPost<{ data: { token: string } }>('/api/auth/login', {
+        email,
+        password,
+      });
+      
+      setToken(loginRes.data.token);
       router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');

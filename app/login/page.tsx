@@ -24,11 +24,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await apiPost<LoginResponse>('/api/auth/login', {
+      const res = await apiPost<{ data: LoginResponse }>('/api/auth/login', {
         email,
         password,
       });
-      setToken(res.token);
+      setToken(res.data.token);
       router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
