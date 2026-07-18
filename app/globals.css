@@ -1,0 +1,102 @@
+/* ── Google Fonts — HARUS di baris pertama sebelum semua rules ── */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+@import "tailwindcss";
+
+/* ── Kasirku Design Tokens ────────────────────────────────── */
+:root {
+  --bg:          #101a2b;
+  --panel:       #16233a;
+  --panel-hover: #1c2d49;
+  --text:        #eee6d8;
+  --text-dim:    #9c9686;
+  --text-muted:  #5a5446;
+  --accent-gold: #c9a227;
+  --accent-gold-dim: rgba(201, 162, 39, 0.15);
+  --accent-rust: #9b3a2e;
+  --accent-rust-dim: rgba(155, 58, 46, 0.15);
+  --line:        rgba(238, 230, 216, 0.10);
+  --line-strong: rgba(238, 230, 216, 0.20);
+}
+
+/* ── Tailwind v4 Theme Extension ──────────────────────────── */
+@theme inline {
+  --color-bg:          var(--bg);
+  --color-panel:       var(--panel);
+  --color-panel-hover: var(--panel-hover);
+  --color-text:        var(--text);
+  --color-text-dim:    var(--text-dim);
+  --color-text-muted:  var(--text-muted);
+  --color-gold:        var(--accent-gold);
+  --color-rust:        var(--accent-rust);
+  --color-line:        var(--line);
+
+  --font-display: 'Fraunces', serif;
+  --font-body:    'IBM Plex Sans', sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+}
+
+/* ── Base Styles ──────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography ───────────────────────────────────────────── */
+h1, h2, h3 {
+  font-family: 'Fraunces', serif;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+/* Semua angka uang wajib monospace agar sejajar secara visual */
+.mono, .amount {
+  font-family: 'IBM Plex Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Ledger Lines ─────────────────────────────────────────── */
+.ledger-row {
+  border-bottom: 1px solid var(--line);
+  transition: background-color 150ms ease;
+}
+.ledger-row:hover {
+  background-color: var(--panel-hover);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 3px;
+}
+
+/* ── Fade-in animation (minim, bukan berlebihan) ──────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 200ms ease forwards;
+}
