@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     "Aplikasi pencatatan cashflow pribadi dengan pendekatan ledger. Lacak pemasukan, pengeluaran, dan insight finansial di satu tempat.",
   manifest: "/manifest.json",
   themeColor: "#101a2b",
+  icons: {
+    apple: "/icon-192.png",
+  }
 };
 
 export default function RootLayout({
