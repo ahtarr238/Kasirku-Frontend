@@ -77,6 +77,18 @@ export function TransactionModal({ isOpen, onClose, onSubmit, accounts, goals, i
       return;
     }
 
+    // Cek saldo cukup untuk transaksi yang mengurangi akun
+    if (['expense', 'transfer', 'saving'].includes(type)) {
+      const selectedAccount = accounts.find(a => a.id === accountId);
+      const currentBalance = selectedAccount?.balance ?? 0;
+      if (numAmount > currentBalance) {
+        setError(
+          `Saldo tidak cukup. Saldo ${selectedAccount?.name ?? 'akun'}: Rp ${currentBalance.toLocaleString('id-ID')}`
+        );
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       await onSubmit({
