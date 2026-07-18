@@ -1,5 +1,5 @@
-import { useState, FormEvent } from 'react';
-import { Account, TransactionType, Goal } from '@/lib/types';
+import { useState, FormEvent, useEffect } from 'react';
+import { Account, TransactionType, Goal, Transaction } from '@/lib/types';
 import { X } from 'lucide-react';
 import { CustomSelect } from './ui/CustomSelect';
 import { CustomDatePicker } from './ui/CustomDatePicker';
@@ -10,9 +10,10 @@ interface TransactionModalProps {
   onSubmit: (data: any) => Promise<void>;
   accounts: Account[];
   goals: Goal[];
+  initialData?: Partial<Transaction>;
 }
 
-export function TransactionModal({ isOpen, onClose, onSubmit, accounts, goals }: TransactionModalProps) {
+export function TransactionModal({ isOpen, onClose, onSubmit, accounts, goals, initialData }: TransactionModalProps) {
   const [type, setType] = useState<TransactionType>('expense');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [amount, setAmount] = useState('');
@@ -23,6 +24,31 @@ export function TransactionModal({ isOpen, onClose, onSubmit, accounts, goals }:
   const [goalId, setGoalId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setType(initialData.type || 'expense');
+        setDate(initialData.date || new Date().toISOString().split('T')[0]);
+        setAmount(initialData.amount ? initialData.amount.toString() : '');
+        setCategory(initialData.category || '');
+        setNote(initialData.note || '');
+        setAccountId(initialData.account_id || '');
+        setToAccountId(initialData.to_account_id || '');
+        setGoalId(initialData.goal_id || '');
+      } else {
+        setType('expense');
+        setDate(new Date().toISOString().split('T')[0]);
+        setAmount('');
+        setCategory('');
+        setNote('');
+        setAccountId('');
+        setToAccountId('');
+        setGoalId('');
+      }
+      setError('');
+    }
+  }, [isOpen, initialData]);
 
   if (!isOpen) return null;
 

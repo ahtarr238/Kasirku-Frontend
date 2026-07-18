@@ -109,3 +109,15 @@ export interface RecurringTransaction {
   monthCount: number;         // berapa bulan berturut-turut terdeteksi
   lastDate: string;
 }
+
+export interface Reminder {
+  id: string;
+  user_id: string;
+  title: string;
+  amount: number;
+  due_date: string;
+  category: string | null;
+  is_recurring: boolean;
+  recurring_type: 'daily' | 'weekly' | 'monthly' | 'yearly' | null;
+  created_at: string;
+}

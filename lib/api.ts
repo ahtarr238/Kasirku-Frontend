@@ -1,4 +1,4 @@
-import { getToken } from './auth';
+import { getToken, removeToken } from './auth';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
@@ -23,7 +23,7 @@ export async function api<T>(
   if (!res.ok) {
     if (res.status === 401 && !path.includes('/auth/')) {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('kasirku_token');
+        removeToken(); // hapus localStorage + cookie sekaligus
         window.location.href = '/login';
       }
     }

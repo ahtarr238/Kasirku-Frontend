@@ -3,7 +3,7 @@ import { Plus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { getUser } from '@/lib/auth';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
-import { Account, Transaction, Budget, Goal } from '@/lib/types';
+import { Account, Transaction, Budget, Goal, Reminder, TransactionType } from '@/lib/types';
 import { calculateAccountBalance, calculateGoalProgress } from '@/lib/calculations';
 
 import { Header } from '@/components/Header';
@@ -20,6 +20,9 @@ import { BudgetFormModal } from '@/components/BudgetFormModal';
 import { GoalFormModal } from '@/components/GoalFormModal';
 import { NarrativeSummaryCard } from '@/components/NarrativeSummaryCard';
 import { UpcomingBillsBanner } from '@/components/UpcomingBillsBanner';
+import { RemindersList } from '@/components/RemindersList';
+import { ReminderFormModal } from '@/components/ReminderFormModal';
+import { ReminderToastStack } from '@/components/ReminderToastStack';
 import { detectRecurringTransactions } from '@/lib/calculations';
 import Papa from 'papaparse';
 
@@ -30,6 +33,7 @@ export default function DashboardPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -41,13 +45,20 @@ export default function DashboardPage() {
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | undefined>(undefined);
 
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | undefined>(undefined);
+  
+  const [payingReminder, setPayingReminder] = useState<Reminder | undefined>(undefined);
+  const [txInitialData, setTxInitialData] = useState<Partial<Transaction> | undefined>(undefined);
+
   async function fetchData() {
     try {
-      const [accRes, txRes, budgetRes, goalRes] = await Promise.all([
+      const [accRes, txRes, budgetRes, goalRes, remRes] = await Promise.all([
         apiGet<{ data: Account[] }>('/api/accounts'),
         apiGet<{ data: Transaction[] }>('/api/transactions'),
         apiGet<{ data: Budget[] }>('/api/budgets'),
-        apiGet<{ data: Goal[] }>('/api/goals')
+        apiGet<{ data: Goal[] }>('/api/goals'),
+        apiGet<{ data: Reminder[] }>('/api/reminders')
       ]);
 
       const fetchedTx = txRes.data;
@@ -60,6 +71,7 @@ export default function DashboardPage() {
       setAccounts(fetchedAcc);
       setBudgets(budgetRes.data);
       setGoals(goalRes.data);
+      setReminders(remRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -79,6 +91,14 @@ export default function DashboardPage() {
 
   async function handleAddTransaction(data: any) {
     await apiPost('/api/transactions', data);
+    
+    // Jika transaksi ini adalah pembayaran dari sebuah pengingat
+    if (payingReminder) {
+      await apiPatch(`/api/reminders/${payingReminder.id}`, { action: 'mark_paid' });
+      setPayingReminder(undefined);
+      setTxInitialData(undefined);
+    }
+    
     fetchData(); // refresh data
   }
 
@@ -109,6 +129,43 @@ export default function DashboardPage() {
       await apiPost('/api/goals', data);
     }
     fetchData();
+  }
+
+  async function handleSetReminder(data: Partial<Reminder>) {
+    if (editingReminder) {
+      await apiPatch(`/api/reminders/${editingReminder.id}`, data);
+    } else {
+      await apiPost('/api/reminders', data);
+    }
+    fetchData();
+  }
+
+  async function handleDeleteReminder(id: string) {
+    if (!confirm('Hapus pengingat ini?')) return;
+    try {
+      await apiDelete(`/api/reminders/${id}`);
+      fetchData();
+    } catch (err) {
+      alert('Gagal menghapus pengingat');
+    }
+  }
+
+  function handleMarkPaidClick(reminder: Reminder) {
+    setPayingReminder(reminder);
+    setTxInitialData({
+      type: 'expense' as TransactionType,
+      amount: reminder.amount,
+      note: `Pembayaran: ${reminder.title}`,
+      category: reminder.category || '',
+      date: new Date().toISOString().split('T')[0]
+    });
+    setIsTxModalOpen(true);
+  }
+
+  function handleOpenTxModal() {
+    setPayingReminder(undefined);
+    setTxInitialData(undefined);
+    setIsTxModalOpen(true);
   }
 
   function handleExport() {
@@ -146,7 +203,7 @@ export default function DashboardPage() {
       >
       <Header 
         user={user} 
-        onAddTransaction={() => setIsTxModalOpen(true)} 
+        onAddTransaction={handleOpenTxModal} 
         onAddAccount={() => setIsAccModalOpen(true)}
         onExport={handleExport}
       />
@@ -163,7 +220,23 @@ export default function DashboardPage() {
             {/* Main Column */}
             <div className="lg:col-span-2 space-y-8 min-w-0">
               <NarrativeSummaryCard transactions={transactions} />
-              <UpcomingBillsBanner recurringTransactions={detectRecurringTransactions(transactions)} />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <UpcomingBillsBanner recurringTransactions={detectRecurringTransactions(transactions)} />
+                <RemindersList 
+                  reminders={reminders}
+                  onAdd={() => {
+                    setEditingReminder(undefined);
+                    setIsReminderModalOpen(true);
+                  }}
+                  onEdit={(r) => {
+                    setEditingReminder(r);
+                    setIsReminderModalOpen(true);
+                  }}
+                  onDelete={handleDeleteReminder}
+                  onMarkPaid={handleMarkPaidClick}
+                />
+              </div>
               
               <CashflowChart transactions={transactions} />
               
@@ -211,10 +284,15 @@ export default function DashboardPage() {
 
       <TransactionModal
         isOpen={isTxModalOpen}
-        onClose={() => setIsTxModalOpen(false)}
+        onClose={() => {
+          setIsTxModalOpen(false);
+          setPayingReminder(undefined);
+          setTxInitialData(undefined);
+        }}
         onSubmit={handleAddTransaction}
         accounts={accounts}
         goals={goals}
+        initialData={txInitialData}
       />
 
       <AccountModal
@@ -238,9 +316,19 @@ export default function DashboardPage() {
         initialData={editingGoal}
       />
 
+      <ReminderFormModal
+        isOpen={isReminderModalOpen}
+        onClose={() => setIsReminderModalOpen(false)}
+        onSubmit={handleSetReminder}
+        initialData={editingReminder}
+      />
+
+      {/* Toast notifikasi tagihan mendekati jatuh tempo */}
+      <ReminderToastStack reminders={reminders} />
+
       {/* FAB Mobile (Hanya muncul di HP) */}
       <button
-        onClick={() => setIsTxModalOpen(true)}
+        onClick={handleOpenTxModal}
         className="fixed sm:hidden bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-40 transition-transform active:scale-95 fade-in"
         style={{ background: 'var(--accent-gold)', color: '#101a2b', boxShadow: '0 4px 20px rgba(201, 162, 39, 0.3)' }}
         aria-label="Catat Transaksi"

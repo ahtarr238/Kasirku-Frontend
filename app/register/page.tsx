@@ -38,12 +38,12 @@ export default function RegisterPage() {
       });
       
       // Auto login after register
-      const loginRes = await apiPost<{ data: { token: string } }>('/api/auth/login', {
+      const loginRes = await apiPost<{ token: string }>('/api/auth/login', {
         email,
         password,
       });
       
-      setToken(loginRes.data.token);
+      setToken(loginRes.token);
       router.replace('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');

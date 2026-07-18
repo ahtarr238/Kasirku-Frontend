@@ -1,22 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Route yang butuh login
-const PROTECTED_ROUTES = ['/', '/import'];
-// Route yang hanya untuk guest (sudah login → redirect ke dashboard)
-const GUEST_ROUTES = ['/login', '/register'];
+const PROTECTED = ['/'];
+const GUEST_ONLY = ['/login', '/register'];
 
-export function proxy(req: NextRequest) {
+export default function middleware(req: NextRequest) {
   const token = req.cookies.get('kasirku_token')?.value;
   const { pathname } = req.nextUrl;
 
-  const isProtected = PROTECTED_ROUTES.some(
+  const isProtected = PROTECTED.some(
     (p) => pathname === p || pathname.startsWith(p + '/')
   );
-  const isGuest = GUEST_ROUTES.some((p) => pathname === p);
+  const isGuest = GUEST_ONLY.some((p) => pathname === p);
 
+  // Belum login → ke halaman login
   if (isProtected && !token) {
     return NextResponse.redirect(new URL('/login', req.url));
   }
+
+  // Sudah login → jangan masuk ke halaman login/register lagi
   if (isGuest && token) {
     return NextResponse.redirect(new URL('/', req.url));
   }
@@ -25,5 +26,6 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Jangan intercept request ke _next (static), favicon, dan API routes
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
 };
